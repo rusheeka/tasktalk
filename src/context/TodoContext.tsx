@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { Task, TimerSettings } from "../types";
 import { toast } from "../hooks/use-toast";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface TodoContextProps {
   tasks: Task[];
@@ -22,20 +23,30 @@ interface TodoContextProps {
 const TodoContext = createContext<TodoContextProps | undefined>(undefined);
 
 export function TodoProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    // Load from localStorage initially
+    const stored = localStorage.getItem("tasks");
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Save to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
   const [timerSettings, setTimerSettings] = useState<TimerSettings>({
-    duration: 300, // 5 minutes by default
+    duration: 300,
     autoPlayRecording: true,
   });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [currentRecording, setCurrentRecording] = useState<string | null>(null);
-  const [alarmSound] = useState<HTMLAudioElement | null>(() => 
-    typeof window !== 'undefined' 
-      ? new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3") 
+  const [playingAudio, setPlayingAudio] = useState<HTMLAudioElement | null>(null);
+  const [alarmSound] = useState<HTMLAudioElement | null>(() =>
+    typeof window !== "undefined"
+      ? new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3")
       : null
   );
-  
-  // Keep track of already notified tasks to prevent duplicate notifications
+
   const [notifiedTasks] = useState<Set<string>>(new Set());
 
   const addTask = (title: string, recording?: string, dueDate?: Date, dueTime?: string) => {
@@ -48,15 +59,15 @@ export function TodoProvider({ children }: { children: ReactNode }) {
       dueDate,
       dueTime,
     };
-    setTasks([...tasks, newTask]);
-    
+    setTasks((prev) => [...prev, newTask]);
+
     let description = "Your task has been added successfully!";
     if (dueDate) {
-      description = `Task due on ${format(dueDate, 'PPP')}${dueTime ? ` at ${dueTime}` : ''}`;
+      description = `Task due on ${format(dueDate, "PPP")}${dueTime ? ` at ${dueTime}` : ""}`;
     } else if (dueTime) {
       description = `Task due at ${dueTime}`;
     }
-    
+
     toast({
       title: "Task Added",
       description,
@@ -64,15 +75,13 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleTaskCompletion = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
+    setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
     );
   };
 
   const deleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks((prev) => prev.filter((task) => task.id !== id));
     toast({
       title: "Task Deleted",
       description: "Your task has been removed.",
@@ -81,9 +90,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   };
 
   const editTask = (id: string, title: string) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, title } : task))
-    );
+    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, title } : task)));
     toast({
       title: "Task Updated",
       description: "Your task has been updated successfully!",
@@ -91,8 +98,8 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   };
 
   const updateTaskDueTime = (id: string, dueTime: string) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, dueTime } : task))
+    setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, dueTime } : task))
     );
     toast({
       title: "Due Time Set",
@@ -101,67 +108,72 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   };
 
   const updateTaskDueDate = (id: string, dueDate: Date) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, dueDate } : task))
+    setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, dueDate } : task))
     );
     toast({
       title: "Due Date Set",
-      description: `Task due date set to ${format(dueDate, 'PPP')}`,
+      description: `Task due date set to ${format(dueDate, "PPP")}`,
     });
   };
 
-  // Function to check for due tasks
+  const stopAudio = () => {
+    if (playingAudio) {
+      playingAudio.pause();
+      playingAudio.currentTime = 0;
+      setPlayingAudio(null);
+    }
+  };
+
   const checkDueTasks = () => {
     const now = new Date();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
     const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    tasks.forEach(task => {
-      if (task.completed) return; // Skip completed tasks
-      
-      // Check if the task is due today and at the current time
-      const isDueToday = task.dueDate ? 
-        new Date(task.dueDate).getFullYear() === currentDate.getFullYear() &&
-        new Date(task.dueDate).getMonth() === currentDate.getMonth() &&
-        new Date(task.dueDate).getDate() === currentDate.getDate()
-        : true; // If no due date, treat as due today
-      
+
+    tasks.forEach((task) => {
+      if (task.completed || notifiedTasks.has(task.id)) return;
+
+      const isDueToday = task.dueDate
+        ? new Date(task.dueDate).toDateString() === currentDate.toDateString()
+        : true;
+
       const isTimeMatching = task.dueTime === currentTime;
-      
-      if (isDueToday && isTimeMatching && !notifiedTasks.has(task.id)) {
-        console.log(`Task due now: ${task.title} at ${currentTime}`);
-        
-        // Mark this task as notified
+
+      if (isDueToday && isTimeMatching) {
         notifiedTasks.add(task.id);
-        
-        // Play recording if available, otherwise play alarm sound
+
+        let audio: HTMLAudioElement;
         if (task.recording) {
-          console.log("Playing task recording");
-          const audio = new Audio(task.recording);
-          audio.play().catch(err => console.error("Error playing recording:", err));
+          audio = new Audio(task.recording);
         } else if (alarmSound) {
-          console.log("Playing alarm sound");
-          alarmSound.play().catch(err => console.error("Error playing alarm:", err));
+          audio = alarmSound.cloneNode(true) as HTMLAudioElement;
+        } else {
+          return;
         }
-        
-        // Show toast notification
+
+        audio.loop = true;
+        audio.play().catch((err) => console.error("Error playing audio:", err));
+        setPlayingAudio(audio);
+
         toast({
-          title: "Task Due Now!",
-          description: task.title,
-          variant: "destructive",
+          title: "Alarm",
+          description: "Task is due!",
+          action: (
+            <Button onClick={stopAudio} variant="destructive">
+              Stop Alarm
+            </Button>
+          ),
         });
       }
     });
   };
 
-  // Set up a timer to check tasks every minute
   useEffect(() => {
-    // Check immediately when component mounts
     checkDueTasks();
-    
-    // Then check every minute
-    const intervalId = setInterval(checkDueTasks, 5000); // Check every 5 seconds for testing
-    
+    const intervalId = setInterval(checkDueTasks, 5000);
     return () => clearInterval(intervalId);
   }, [tasks]);
 

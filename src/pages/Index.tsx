@@ -1,4 +1,3 @@
-
 import React from "react";
 import { TodoProvider } from "../context/TodoContext";
 import AddTodoForm from "../components/AddTodoForm";
@@ -9,8 +8,27 @@ import { Toaster } from "@/components/ui/toaster";
 const Index = () => {
   return (
     <TodoProvider>
-      <div className="min-h-screen py-8 px-4 md:px-6 bg-gradient-to-br from-background to-purple-50/30 dark:from-background dark:to-purple-950/10">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative min-h-screen py-8 px-4 md:px-6 overflow-hidden">
+        {/* Background Video */}
+        <div className="fixed inset-0 z-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/background.mp4" type="video/mp4" />
+            {/* Add additional source formats for better browser compatibility if needed */}
+            {/* <source src="/videos/background.webm" type="video/webm" /> */}
+            Your browser does not support the video tag.
+          </video>
+          {/* Overlay to darken the video and improve content readability */}
+          <div className="absolute inset-0 bg-black/30 dark:bg-black/50"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 max-w-4xl mx-auto">
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
               Voice Timer Todo
