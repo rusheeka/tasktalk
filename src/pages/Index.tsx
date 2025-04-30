@@ -19,8 +19,6 @@ const Index = () => {
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source src="/background.mp4" type="video/mp4" />
-            {/* Add additional source formats for better browser compatibility if needed */}
-            {/* <source src="/videos/background.webm" type="video/webm" /> */}
             Your browser does not support the video tag.
           </video>
           {/* Overlay to darken the video and improve content readability */}
@@ -29,14 +27,15 @@ const Index = () => {
 
         {/* Content */}
         <div className="relative z-10 max-w-4xl mx-auto">
-          <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Voice Timer Todo
+          {/* Transparent gradient box for header - now with top-to-bottom gradient */}
+          <div className="mb-8 text-center p-6 rounded-lg backdrop-blur-sm bg-gradient-to-b from-black/80 to-black/40 border border-white/20 dark:border-purple-900/30 shadow-lg">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-blue-100 bg-clip-text text-transparent">
+              Task Talk
             </h1>
             <p className="text-lg text-muted-foreground mt-2">
               Manage tasks, record voice notes, and set due dates & times
             </p>
-          </header>
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
@@ -44,12 +43,13 @@ const Index = () => {
             </div>
             
             <div className="space-y-6">
-              <TimerComponent />
               <AddTodoForm />
+              <TimerComponent />
             </div>
           </div>
         </div>
       </div>
+      <Toaster />
     </TodoProvider>
   );
 };

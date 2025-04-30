@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useTodo } from "../context/TodoContext";
 import TodoItem from "./TodoItem";
@@ -18,9 +17,9 @@ export default function TodoList() {
   });
 
   return (
-    <Card>
+    <Card className="backdrop-blur-md bg-white/10 dark:bg-black/20 border border-white/30 dark:border-purple-900/30 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center text-white dark:text-white">
           <ListTodo className="mr-2 h-5 w-5" />
           Tasks {tasks.length > 0 && `(${tasks.length})`}
         </CardTitle>
@@ -32,7 +31,7 @@ export default function TodoList() {
               <TodoItem key={task.id} task={task} />
             ))
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-white/80 dark:text-muted-foreground">
               No tasks yet. Create one below!
             </div>
           )}
