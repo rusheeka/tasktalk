@@ -187,13 +187,14 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     audioRef.current = audio;
     setActiveAlarmTask(task);
 
-    // Set repeating reminder
     remindAgainIntervalRef.current = setInterval(() => {
       const repeatAudio = new Audio(
         task.recording ||
           "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"
       );
-      repeatAudio.play().catch((err) => console.error("Repeat audio error:", err));
+      repeatAudio.play().catch((err) =>
+        console.error("Repeat audio error:", err)
+      );
     }, REMIND_EVERY_X_MINUTES * 60 * 1000);
 
     toast({

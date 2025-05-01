@@ -1,9 +1,8 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Clock, Mic, MicOff, Calendar } from "lucide-react";
+import { Plus, Clock, Mic, MicOff, Volume2 } from "lucide-react";
 import { useTodo } from "../context/TodoContext";
 import VoiceRecorder from "./VoiceRecorder";
 import { DatePicker } from "./DatePicker";
@@ -15,17 +14,42 @@ export default function AddTodoForm() {
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [showRecorder, setShowRecorder] = useState(false);
   const [currentRecording, setCurrentRecording] = useState<string | null>(null);
+  const [selectedTone, setSelectedTone] = useState("default");
+
+  const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
+
+  const alarmTones = [
+    { label: "Default", value: "default" },
+    { label: "Chime", value: "chime", src: "/tones/chime.mp3" },
+    { label: "Bell", value: "bell", src: "/tones/bell.mp3" },
+    { label: "Soft Ping", value: "ping", src: "/tones/ping.mp3" },
+    { label: "Beep", value: "beep", src: "/tones/beep.mp3" },
+  ];
+
+  const handlePlayTone = (toneValue: string) => {
+    const audio = audioRefs.current[toneValue];
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (title.trim()) {
-      addTask(title, currentRecording || undefined, dueDate, dueTime || undefined);
+      addTask(
+        title,
+        currentRecording || undefined,
+        dueDate,
+        dueTime || undefined,
+        selectedTone
+      );
       setTitle("");
       setDueTime("");
       setDueDate(undefined);
       setCurrentRecording(null);
       setShowRecorder(false);
+      setSelectedTone("default");
     }
   };
 
@@ -51,13 +75,10 @@ export default function AddTodoForm() {
               onChange={(e) => setTitle(e.target.value)}
               className="flex-grow border-purple-200 dark:border-purple-800/30 focus-visible:ring-primary"
             />
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div className="flex-1">
-                <DatePicker 
-                  date={dueDate}
-                  onSelect={setDueDate}
-                />
+                <DatePicker date={dueDate} onSelect={setDueDate} />
               </div>
               <div className="flex items-center relative">
                 <Clock className="absolute left-3 h-4 w-4 text-primary pointer-events-none" />
@@ -66,12 +87,51 @@ export default function AddTodoForm() {
                   value={dueTime}
                   onChange={(e) => setDueTime(e.target.value)}
                   className="pl-10 border-purple-200 dark:border-purple-800/30 focus-visible:ring-primary w-full"
-                  placeholder="Set time"
                 />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-primary mb-1">
+                  Select Alarm Tone
+                </label>
+                <div className="space-y-2">
+                  {alarmTones.map((tone) => (
+                    <div
+                      key={tone.value}
+                      className="flex items-center justify-between bg-white dark:bg-transparent border border-purple-200 dark:border-purple-800/30 px-3 py-2 rounded-md"
+                    >
+                      <label className="flex items-center gap-2 text-sm cursor-pointer w-full">
+                        <input
+                          type="radio"
+                          value={tone.value}
+                          checked={selectedTone === tone.value}
+                          onChange={() => setSelectedTone(tone.value)}
+                          className="accent-purple-500"
+                        />
+                        {tone.label}
+                      </label>
+                      {tone.src && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePlayTone(tone.value)}
+                          >
+                            <Volume2 className="h-4 w-4 text-primary" />
+                          </Button>
+                          <audio
+                            ref={(el) => (audioRefs.current[tone.value] = el)}
+                            src={tone.src}
+                          />
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-3">
             <Button
               type="button"
@@ -91,23 +151,23 @@ export default function AddTodoForm() {
                 </>
               )}
             </Button>
-            
-            <Button 
-              type="submit" 
+
+            <Button
+              type="submit"
               disabled={!title.trim()}
               className="bg-primary hover:bg-primary/90 flex-grow"
             >
               Add Task
             </Button>
           </div>
-          
+
           {currentRecording && (
             <div className="text-sm text-primary flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 p-2 rounded-md">
               <Mic className="h-4 w-4 mr-2" />
               Voice note attached
             </div>
           )}
-          
+
           {showRecorder && (
             <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
           )}
