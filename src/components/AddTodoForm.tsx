@@ -19,11 +19,11 @@ export default function AddTodoForm() {
   const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
 
   const alarmTones = [
-    { label: "Default", value: "default" },
-    { label: "Chime", value: "chime", src: "/tones/chime.mp3" },
-    { label: "Bell", value: "bell", src: "/tones/bell.mp3" },
-    { label: "Soft Ping", value: "ping", src: "/tones/ping.mp3" },
-    { label: "Beep", value: "beep", src: "/tones/beep.mp3" },
+    { label: "Default", value: "default", src: "/tones/alarm.mp3" },
+    { label: "Chime", value: "chime", src: "/tones/chime.wav" },
+    { label: "Bell", value: "bell", src: "/tones/bell.wav" },
+    // { label: "Soft Ping", value: "ping", src: "/tones/ping.mp3" },
+    { label: "Beep", value: "beep", src: "/tones/beep.wav" },
   ];
 
   const handlePlayTone = (toneValue: string) => {
